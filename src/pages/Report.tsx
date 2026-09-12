@@ -449,29 +449,57 @@ export default function Report() {
               publishing this report.
             </p>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => confirmReport('reject')}
-                disabled={saving}
-                className="rounded-2xl border border-white/20 px-5 py-3 font-semibold text-white disabled:opacity-50"
-              >
-                Reject
-              </button>
+            {draft.ai_result.barrier_detected ? (
+  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+    <button
+      type="button"
+      onClick={() => confirmReport('reject')}
+      disabled={saving}
+      className="rounded-2xl border border-white/20 px-5 py-3 font-semibold text-white disabled:opacity-50"
+    >
+      Reject
+    </button>
 
-              <button
-                type="button"
-                onClick={() => confirmReport('confirm')}
-                disabled={saving}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 font-bold text-slate-950 disabled:opacity-50"
-              >
-                <CheckCircle2 size={19} />
+    <button
+      type="button"
+      onClick={() => confirmReport('confirm')}
+      disabled={saving}
+      className="flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 font-bold text-slate-950 disabled:opacity-50"
+    >
+      <CheckCircle2 size={19} />
 
-                {saving
-                  ? 'Saving...'
-                  : 'Confirm & publish'}
-              </button>
-            </div>
+      {saving ? 'Saving...' : 'Confirm & publish'}
+    </button>
+  </div>
+) : (
+  <div className="mt-5">
+    <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4">
+      <p className="font-semibold text-amber-200">
+        No accessibility barrier confidently identified
+      </p>
+
+      <p className="mt-1 text-sm leading-6 text-slate-300">
+        ACCESS could not find enough visible evidence of an
+        accessibility barrier in this image. Please upload a clearer
+        photo showing the entrance, pathway, or accessibility issue.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      onClick={() => {
+        setPhoto(null)
+        setPreview(null)
+        setDraft(null)
+        setError(null)
+        fileInputRef.current?.click()
+      }}
+      className="mt-3 w-full rounded-2xl bg-white px-5 py-3 font-bold text-slate-950"
+    >
+      Choose another image
+    </button>
+  </div>
+)}
           </section>
         )}
       </div>
