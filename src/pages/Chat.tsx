@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { Bot, Send, User, Sparkles, MapPin } from 'lucide-react'
-import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
 type Message = {

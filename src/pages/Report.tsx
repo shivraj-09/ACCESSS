@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react'
 import { Camera, MapPin, Upload, Sparkles, CheckCircle2, X } from 'lucide-react'
-import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
