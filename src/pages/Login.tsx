@@ -1,95 +1,31 @@
-import { ArrowUpRight, Eye, MapPinned, ScanSearch, ShieldCheck, UsersRound } from 'lucide-react'
+import { ArrowUpRight, Eye, MapPinned, ScanSearch, UsersRound } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
 export default function Login() {
   const { enterDemo } = useAuth()
-
+  const navigate = useNavigate()
   async function handleGoogleLogin() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
-    })
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/dashboard` } })
     if (error) console.error('Google login error:', error)
   }
-
-  return (
-    <main className="min-h-screen bg-[#f5f1e8] text-[#18211d]">
-      <div className="mx-auto grid min-h-screen max-w-[1500px] lg:grid-cols-[1.12fr_.88fr]">
-        <section className="relative overflow-hidden bg-[#254b3f] p-6 text-[#f7f4ed] md:p-10 lg:p-14 xl:p-16">
-          <div className="absolute inset-0 opacity-[.07]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '44px 44px' }} />
-          <div className="relative flex min-h-[620px] flex-col lg:min-h-screen">
-            <div className="flex items-center gap-3">
-              <img src="/raah-logo.jpg" alt="RAAH" className="h-14 w-14 rounded-2xl object-cover shadow-xl ring-1 ring-white/20" />
-              <div>
-                <div className="text-2xl font-black tracking-[-.05em] text-[#d4b69e]">RAAH</div>
-                <div className="text-[9px] font-bold uppercase tracking-[.22em] text-[#bdcbc2]">A more accessible tomorrow</div>
-              </div>
-            </div>
-
-            <div className="mt-auto max-w-3xl pb-8 pt-20 lg:pb-14">
-              <p className="text-xs font-black uppercase tracking-[.22em] text-[#d4b69e]">Before the journey</p>
-              <h1 className="mt-5 text-5xl font-black leading-[.98] tracking-[-.05em] md:text-7xl">Know what the path is really like.</h1>
-              <p className="mt-7 max-w-xl text-base leading-7 text-[#dce4de] md:text-lg">A community-powered accessibility map that turns observations into useful context — and helps people choose with confidence.</p>
-
-              <div className="mt-9 grid max-w-2xl gap-3 sm:grid-cols-3">
-                {[[MapPinned, 'See', 'reported conditions'], [ScanSearch, 'Understand', 'photo evidence'], [ArrowUpRight, 'Choose', 'a safer route']].map(([Icon, title, text]) => {
-                  const I = Icon as typeof MapPinned
-                  return (
-                    <div key={String(title)} className="border border-white/10 bg-white/[.06] p-4">
-                      <I size={18} className="text-[#d4b69e]" />
-                      <p className="mt-5 text-sm font-black">{String(title)}</p>
-                      <p className="mt-1 text-xs leading-5 text-[#b9c6bd]">{String(text)}</p>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-[#f4f1ea] px-5 py-8 text-[#18211d] md:px-10 md:py-10 lg:px-12">
-          <div className="mx-auto flex min-h-full max-w-xl flex-col justify-center">
-            <div className="border border-[#d8d2c5] bg-[#fbfaf6] p-7 shadow-2xl shadow-black/10 md:p-9">
-              <div className="mb-7 flex justify-center">
-                <img src="/raah-logo.jpg" alt="RAAH — A more accessible tomorrow" className="h-32 w-32 rounded-[1.8rem] object-cover shadow-xl ring-1 ring-black/5 md:h-36 md:w-36" />
-              </div>
-
-              <p className="text-xs font-black uppercase tracking-[.18em] text-[#b15e3e]">Get started</p>
-              <h2 className="mt-2 text-3xl font-black tracking-[-.035em] text-[#254b3f]">Welcome to RAAH.</h2>
-              <p className="mt-3 text-sm leading-6 text-[#737a73]">Explore the map first, then sign in when you want to contribute.</p>
-
-              <button type="button" onClick={handleGoogleLogin} className="mt-7 flex w-full items-center justify-between bg-[#254b3f] px-5 py-4 font-bold text-white transition hover:bg-[#1d3d33]">
-                <span className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center bg-white text-sm font-black text-[#254b3f]">G</span> Continue with Google</span>
-                <ArrowUpRight size={18} />
-              </button>
-
-              <div className="my-6 flex items-center gap-3 text-[10px] font-black uppercase tracking-[.18em] text-[#9a9c94]"><span className="h-px flex-1 bg-[#ded8cc]" />Judge demo access<span className="h-px flex-1 bg-[#ded8cc]" /></div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <button type="button" onClick={() => enterDemo('judge-1')} className="group border border-[#cfc8ba] bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-[#254b3f] hover:shadow-md">
-                  <div className="flex items-center justify-between"><UsersRound size={18} className="text-[#b15e3e]" /><ArrowUpRight size={16} className="text-[#aaa99f] group-hover:text-[#254b3f]" /></div>
-                  <p className="mt-4 font-black text-[#254b3f]">Alex Morgan</p>
-                  <p className="mt-1 text-xs text-[#7a8179]">Accessibility Explorer</p>
-                  <p className="mt-3 text-[10px] font-bold uppercase tracking-[.12em] text-[#b15e3e]">Enter demo</p>
-                </button>
-                <button type="button" onClick={() => enterDemo('judge-2')} className="group border border-[#cfc8ba] bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-[#254b3f] hover:shadow-md">
-                  <div className="flex items-center justify-between"><Eye size={18} className="text-[#b15e3e]" /><ArrowUpRight size={16} className="text-[#aaa99f] group-hover:text-[#254b3f]" /></div>
-                  <p className="mt-4 font-black text-[#254b3f]">Sam Rivera</p>
-                  <p className="mt-1 text-xs text-[#7a8179]">Community Reporter</p>
-                  <p className="mt-3 text-[10px] font-bold uppercase tracking-[.12em] text-[#b15e3e]">Enter demo</p>
-                </button>
-              </div>
-
-              <div className="mt-5 flex items-start gap-3 border border-[#d7ded2] bg-[#edf2e9] px-4 py-3 text-[11px] leading-5 text-[#52655c]">
-                <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[#1f5b4b]" />
-                <span>Judge access uses demo identities. No personal Google account or Gmail is required.</span>
-              </div>
-            </div>
-            <p className="mt-5 text-center text-xs text-[#8b8f88]">Community-powered accessibility intelligence</p>
-          </div>
-        </section>
-      </div>
-    </main>
-  )
+  function handleDemoLogin(id: 'judge-1' | 'judge-2') {
+    enterDemo(id)
+    navigate('/dashboard', { replace: true })
+  }
+  return <main className="min-h-screen bg-[#254b3f] text-[#f7f4ed]"><div className="mx-auto grid min-h-screen max-w-[1500px] lg:grid-cols-[1.12fr_.88fr]">
+    <section className="relative overflow-hidden p-6 md:p-10 lg:p-14 xl:p-16"><div className="absolute inset-0 opacity-[.07]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '44px 44px' }} /><div className="relative flex h-full flex-col">
+      <div className="flex items-center gap-3"><img src="/raah-logo.svg" alt="RAAH" className="h-14 w-14 rounded-2xl object-cover shadow-lg ring-1 ring-white/15" /><div><div className="text-2xl font-black tracking-[-.05em] text-[#d4b69e]">RAAH</div><div className="text-[9px] font-bold uppercase tracking-[.22em] text-[#bdcbc2]">A more accessible tomorrow</div></div></div>
+      <div className="mt-auto max-w-3xl pb-8 pt-20 lg:pb-14"><p className="text-xs font-black uppercase tracking-[.22em] text-[#d4b69e]">Before the journey</p><h1 className="mt-5 text-5xl font-black leading-[.98] tracking-[-.05em] md:text-7xl">Know what the path is really like.</h1><p className="mt-7 max-w-xl text-base leading-7 text-[#dce4de] md:text-lg">A community-powered accessibility map that turns observations into useful context — and helps people choose with confidence.</p><div className="mt-9 grid max-w-2xl gap-3 sm:grid-cols-3">{[[MapPinned,'See','reported conditions'],[ScanSearch,'Understand','photo evidence'],[ArrowUpRight,'Choose','a safer route']].map(([Icon,title,text])=>{const I=Icon as typeof MapPinned;return <div key={String(title)} className="border border-white/10 bg-white/[.06] p-4"><I size={18} className="text-[#d4b69e]"/><p className="mt-5 text-sm font-black">{String(title)}</p><p className="mt-1 text-xs leading-5 text-[#b9c6bd]">{String(text)}</p></div>})}</div></div>
+    </div></section>
+    <section className="bg-[#f4f1ea] px-5 py-6 text-[#18211d] md:px-10 md:py-10 lg:px-12"><div className="mx-auto flex min-h-full max-w-xl flex-col justify-center"><div className="border border-[#d8d2c5] bg-[#fbfaf6] p-7 shadow-2xl shadow-black/10 md:p-9">
+      <div className="mb-7 flex justify-center"><img src="/raah-logo.svg" alt="RAAH — A more accessible tomorrow" className="h-32 w-32 rounded-[1.8rem] object-cover shadow-xl ring-1 ring-black/5 md:h-36 md:w-36" /></div>
+      <p className="text-xs font-black uppercase tracking-[.18em] text-[#b15e3e]">Get started</p><h2 className="mt-2 text-3xl font-black tracking-[-.035em] text-[#254b3f]">Welcome to RAAH.</h2><p className="mt-3 text-sm leading-6 text-[#737a73]">Explore the map first, then sign in when you want to contribute.</p>
+      <button type="button" onClick={handleGoogleLogin} className="mt-7 flex w-full items-center justify-between bg-[#254b3f] px-5 py-4 font-bold text-white transition hover:bg-[#1d3d33]"><span className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center bg-white text-sm font-black text-[#254b3f]">G</span> Continue with Google</span><ArrowUpRight size={18}/></button>
+      <div className="my-6 flex items-center gap-3 text-[10px] font-black uppercase tracking-[.18em] text-[#9a9c94]"><span className="h-px flex-1 bg-[#ded8cc]"/>Judge demo access<span className="h-px flex-1 bg-[#ded8cc]"/></div>
+      <div className="grid gap-3 sm:grid-cols-2"><button type="button" onClick={()=>handleDemoLogin('judge-1')} className="group border border-[#cfc8ba] bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-[#254b3f] hover:shadow-md"><div className="flex items-center justify-between"><UsersRound size={18} className="text-[#b15e3e]"/><ArrowUpRight size={16} className="text-[#aaa99f] group-hover:text-[#254b3f]"/></div><p className="mt-4 font-black text-[#254b3f]">Alex Morgan</p><p className="mt-1 text-xs text-[#7a8179]">Accessibility Explorer</p><p className="mt-3 text-[10px] font-bold uppercase tracking-[.12em] text-[#b15e3e]">Enter demo</p></button><button type="button" onClick={()=>handleDemoLogin('judge-2')} className="group border border-[#cfc8ba] bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-[#254b3f] hover:shadow-md"><div className="flex items-center justify-between"><Eye size={18} className="text-[#b15e3e]"/><ArrowUpRight size={16} className="text-[#aaa99f] group-hover:text-[#254b3f]"/></div><p className="mt-4 font-black text-[#254b3f]">Sam Rivera</p><p className="mt-1 text-xs text-[#7a8179]">Community Reporter</p><p className="mt-3 text-[10px] font-bold uppercase tracking-[.12em] text-[#b15e3e]">Enter demo</p></button></div>
+      <p className="mt-5 text-center text-[11px] leading-5 text-[#8a8e87]">Demo access opens the dashboard directly. No personal Google account is required.</p>
+    </div><p className="mt-5 text-center text-xs text-[#8b8f88]">Community-powered accessibility intelligence</p></div></section>
+  </div></main>
 }
