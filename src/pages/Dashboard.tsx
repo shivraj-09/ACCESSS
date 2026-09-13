@@ -1,30 +1,19 @@
 import { useEffect, useState } from 'react'
-import {
-  ArrowRight,
-  Bot,
-  CheckCircle2,
-  Map,
-  MapPin,
-  Plus,
-  Sparkles,
-} from 'lucide-react'
+import { ArrowRight, Bot, CheckCircle2, Map, MapPin, Plus, Sparkles, Route, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
-type Report = {
-  id: string
-  latitude: number
-  longitude: number
-  barrier_type: string
-  description: string | null
-  status: string
-  created_at: string
-}
+type Report = { id: string; latitude: number; longitude: number; barrier_type: string; description: string | null; status: string; created_at: string }
+
+const locationHints = [
+  { name: 'Panjim', detail: '5 demo reports', href: '/map' },
+  { name: 'Margao', detail: '4 demo reports', href: '/map' },
+  { name: 'Verna', detail: '4 demo reports', href: '/map' },
+]
 
 export default function Dashboard() {
   const { session } = useAuth()
-
   const [myReports, setMyReports] = useState<Report[]>([])
   const [recentReports, setRecentReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
@@ -32,359 +21,90 @@ export default function Dashboard() {
   useEffect(() => {
     async function loadDashboard() {
       if (!session?.user.id) return
-
       setLoading(true)
-
       const [mine, recent] = await Promise.all([
-        supabase
-          .from('barrier_reports')
-          .select(
-            'id, latitude, longitude, barrier_type, description, status, created_at',
-          )
-          .eq('user_id', session.user.id)
-          .order('created_at', {
-            ascending: false,
-          }),
-
-        supabase
-          .from('barrier_reports')
-          .select(
-            'id, latitude, longitude, barrier_type, description, status, created_at',
-          )
-          .eq('status', 'confirmed')
-          .order('created_at', {
-            ascending: false,
-          })
-          .limit(5),
+        supabase.from('barrier_reports').select('id, latitude, longitude, barrier_type, description, status, created_at').eq('user_id', session.user.id).order('created_at', { ascending: false }),
+        supabase.from('barrier_reports').select('id, latitude, longitude, barrier_type, description, status, created_at').eq('status', 'confirmed').order('created_at', { ascending: false }).limit(5),
       ])
-
-      if (!mine.error) {
-        setMyReports(mine.data ?? [])
-      }
-
-      if (!recent.error) {
-        setRecentReports(recent.data ?? [])
-      }
-
+      if (!mine.error) setMyReports(mine.data ?? [])
+      if (!recent.error) setRecentReports(recent.data ?? [])
       setLoading(false)
     }
-
     loadDashboard()
   }, [session?.user.id])
 
-  const confirmedMine = myReports.filter(
-    (report) => report.status === 'confirmed',
-  ).length
-
-  const pendingMine = myReports.filter(
-    (report) => report.status === 'draft',
-  ).length
-
-  const displayName =
-    session?.user.user_metadata?.full_name ??
-    session?.user.user_metadata?.name ??
-    session?.user.email?.split('@')[0] ??
-    'there'
+  const confirmedMine = myReports.filter((r) => r.status === 'confirmed').length
+  const pendingMine = myReports.filter((r) => r.status === 'draft').length
+  const displayName = session?.user.user_metadata?.full_name ?? session?.user.user_metadata?.name ?? session?.user.email?.split('@')[0] ?? 'there'
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 pb-28 md:px-6 md:pb-10">
-      {/* Hero */}
-      <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 px-6 py-8 text-white shadow-xl md:px-10 md:py-10">
-        <div className="relative z-10 max-w-2xl">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-slate-400">
-            Welcome to ACCESS
-          </p>
-
-          <h1 className="mt-3 text-3xl font-black tracking-tight md:text-5xl">
-            Make accessibility visible.
-          </h1>
-
-          <p className="mt-4 max-w-xl text-base leading-7 text-slate-300 md:text-lg">
-            Report barriers, discover accessibility conditions,
-            and help build a more informed map of the places around
-            you.
-          </p>
-
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link
-              to="/report"
-              className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 font-bold text-slate-950 transition hover:bg-slate-100"
-            >
-              <Plus size={19} />
-              Report a barrier
-            </Link>
-
-            <Link
-              to="/map"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-5 py-3 font-semibold text-white transition hover:bg-white/10"
-            >
-              <Map size={18} />
-              Explore the map
-            </Link>
-          </div>
-        </div>
-
-        {/* Decorative element */}
-        <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full border-[40px] border-white/5" />
-
-        <div className="pointer-events-none absolute -bottom-32 right-20 h-72 w-72 rounded-full border-[50px] border-white/[0.03]" />
-      </section>
-
-      {/* Stats */}
-      <section className="mt-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-500">
-              My reports
-            </p>
-
-            <div className="rounded-xl bg-slate-100 p-2">
-              <MapPin size={18} />
-            </div>
-          </div>
-
-          <p className="mt-4 text-3xl font-black text-slate-950">
-            {loading ? '—' : myReports.length}
-          </p>
-
-          <p className="mt-1 text-xs text-slate-500">
-            Reports you've submitted
-          </p>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-500">
-              Confirmed
-            </p>
-
-            <div className="rounded-xl bg-slate-100 p-2">
-              <CheckCircle2 size={18} />
-            </div>
-          </div>
-
-          <p className="mt-4 text-3xl font-black text-slate-950">
-            {loading ? '—' : confirmedMine}
-          </p>
-
-          <p className="mt-1 text-xs text-slate-500">
-            Published accessibility reports
-          </p>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-500">
-              Awaiting review
-            </p>
-
-            <div className="rounded-xl bg-slate-100 p-2">
-              <Sparkles size={18} />
-            </div>
-          </div>
-
-          <p className="mt-4 text-3xl font-black text-slate-950">
-            {loading ? '—' : pendingMine}
-          </p>
-
-          <p className="mt-1 text-xs text-slate-500">
-            AI-analyzed drafts
-          </p>
-        </div>
-      </section>
-
-      {/* Quick actions */}
-      <section className="mt-8">
-        <div className="flex items-end justify-between">
+    <main className="mx-auto max-w-7xl px-4 py-6 pb-28 md:px-6 md:py-8 md:pb-10 access-enter">
+      <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 px-6 py-8 text-white shadow-2xl md:px-10 md:py-10 access-grid">
+        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border-[55px] border-emerald-400/10 access-float" />
+        <div className="absolute bottom-[-120px] right-[18%] h-64 w-64 rounded-full border-[45px] border-sky-400/5" />
+        <div className="relative z-10 grid gap-10 lg:grid-cols-[1.35fr_.65fr] lg:items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Quick actions
-            </p>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-emerald-300 backdrop-blur">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 access-pulse" /> ACCESSIBILITY INTELLIGENCE
+            </div>
+            <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-[-0.04em] md:text-6xl">Make every journey more accessible.</h1>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 md:text-lg">Report barriers. Understand accessibility. When a path is blocked, ACCESS helps you find a safer alternative.</p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link to="/map" className="inline-flex items-center gap-2 rounded-2xl bg-emerald-400 px-5 py-3 font-black text-slate-950 shadow-lg shadow-emerald-950/20 hover:-translate-y-0.5 hover:bg-emerald-300"><Route size={18} /> Find an accessible route</Link>
+              <Link to="/report" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 font-bold text-white hover:bg-white/10"><Plus size={18} /> Report a barrier</Link>
+            </div>
+          </div>
+          <div className="hidden lg:block">
+            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-5 backdrop-blur-xl shadow-2xl">
+              <div className="flex items-center justify-between"><span className="text-xs font-bold uppercase tracking-widest text-slate-400">Route intelligence</span><ShieldCheck size={19} className="text-emerald-300" /></div>
+              <div className="mt-5 space-y-3">
+                <div className="rounded-2xl border border-red-400/20 bg-red-400/10 p-4"><div className="flex justify-between gap-3"><div><p className="text-xs font-bold text-red-300">ROUTE A · 12 MIN</p><p className="mt-1 font-black">Blocked ramp detected</p></div><span className="rounded-full bg-red-400/15 px-2 py-1 text-[10px] font-black text-red-300">HIGH RISK</span></div></div>
+                <div className="rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-4"><div className="flex justify-between gap-3"><div><p className="text-xs font-bold text-emerald-300">ROUTE B · 14 MIN</p><p className="mt-1 font-black">Lower reported barrier risk</p></div><span className="rounded-full bg-emerald-400/15 px-2 py-1 text-[10px] font-black text-emerald-300">RECOMMENDED</span></div></div>
+              </div>
+              <p className="mt-4 text-xs leading-5 text-slate-400">Accessibility is a route property — not just a destination property.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">
-              What would you like to do?
-            </h2>
+      <section className="mt-5 grid gap-3 sm:grid-cols-3 access-stagger">
+        {[
+          { label: 'My reports', value: loading ? '—' : myReports.length, note: 'Submitted by you', icon: MapPin },
+          { label: 'Confirmed', value: loading ? '—' : confirmedMine, note: 'Published reports', icon: CheckCircle2 },
+          { label: 'Awaiting review', value: loading ? '—' : pendingMine, note: 'AI-analyzed drafts', icon: Sparkles },
+        ].map((stat) => {
+          const Icon = stat.icon
+          return <div key={stat.label} className="group rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><div className="flex items-center justify-between"><p className="text-sm font-bold text-slate-500">{stat.label}</p><span className="rounded-xl bg-slate-100 p-2.5 transition group-hover:bg-emerald-50 group-hover:text-emerald-700"><Icon size={18} /></span></div><p className="mt-5 text-3xl font-black tracking-tight">{stat.value}</p><p className="mt-1 text-xs text-slate-500">{stat.note}</p></div>
+        })}
+      </section>
+
+      <section className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
+        <div>
+          <div className="flex items-end justify-between"><div><p className="text-xs font-black uppercase tracking-[.18em] text-slate-400">Explore</p><h2 className="mt-1 text-2xl font-black tracking-tight">What can you do?</h2></div></div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {[
+              { href: '/map', title: 'Explore accessibility', text: 'See barriers and accessible locations around you.', icon: Map, tone: 'bg-slate-950 text-white' },
+              { href: '/report', title: 'Report a barrier', text: 'Upload evidence and get an AI-assisted assessment.', icon: Plus, tone: 'bg-emerald-500 text-white' },
+              { href: '/chat', title: 'Ask ACCESS AI', text: 'Get practical accessibility guidance and map context.', icon: Bot, tone: 'bg-sky-600 text-white' },
+              { href: '/map', title: 'Find a safer route', text: 'Compare walking alternatives against reported barriers.', icon: Route, tone: 'bg-amber-500 text-white' },
+            ].map((item) => { const Icon = item.icon; return <Link key={item.title} to={item.href} className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl"><div className="flex items-center justify-between"><span className={`rounded-xl p-2.5 ${item.tone}`}><Icon size={19} /></span><ArrowRight size={18} className="text-slate-300 transition group-hover:translate-x-1 group-hover:text-slate-950" /></div><h3 className="mt-5 font-black">{item.title}</h3><p className="mt-1 text-sm leading-6 text-slate-500">{item.text}</p></Link> })}
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <Link
-            to="/report"
-            className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-          >
-            <div className="flex items-center justify-between">
-              <div className="rounded-xl bg-slate-950 p-2.5 text-white">
-                <Plus size={20} />
-              </div>
-
-              <ArrowRight
-                size={18}
-                className="text-slate-400 transition group-hover:translate-x-1 group-hover:text-slate-950"
-              />
-            </div>
-
-            <h3 className="mt-5 font-bold text-slate-950">
-              Report a barrier
-            </h3>
-
-            <p className="mt-1 text-sm leading-6 text-slate-500">
-              Upload a photo and let ACCESS help analyze the
-              situation.
-            </p>
-          </Link>
-
-          <Link
-            to="/map"
-            className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-          >
-            <div className="flex items-center justify-between">
-              <div className="rounded-xl bg-slate-100 p-2.5 text-slate-950">
-                <Map size={20} />
-              </div>
-
-              <ArrowRight
-                size={18}
-                className="text-slate-400 transition group-hover:translate-x-1 group-hover:text-slate-950"
-              />
-            </div>
-
-            <h3 className="mt-5 font-bold text-slate-950">
-              Explore accessibility
-            </h3>
-
-            <p className="mt-1 text-sm leading-6 text-slate-500">
-              See confirmed accessibility reports on the map.
-            </p>
-          </Link>
-
-          <Link
-            to="/chat"
-            className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-          >
-            <div className="flex items-center justify-between">
-              <div className="rounded-xl bg-slate-100 p-2.5 text-slate-950">
-                <Bot size={20} />
-              </div>
-
-              <ArrowRight
-                size={18}
-                className="text-slate-400 transition group-hover:translate-x-1 group-hover:text-slate-950"
-              />
-            </div>
-
-            <h3 className="mt-5 font-bold text-slate-950">
-              Ask ACCESS AI
-            </h3>
-
-            <p className="mt-1 text-sm leading-6 text-slate-500">
-              Get practical answers about accessibility and barriers.
-            </p>
-          </Link>
-        </div>
+        <aside className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between"><div><p className="text-xs font-black uppercase tracking-[.18em] text-slate-400">Demo coverage</p><h2 className="mt-1 text-xl font-black">Goa prototype</h2></div><MapPin className="text-emerald-600" size={20} /></div>
+          <p className="mt-2 text-sm leading-6 text-slate-500">13 confirmed prototype reports across three demo locations.</p>
+          <div className="mt-5 space-y-2">{locationHints.map((location) => <Link key={location.name} to={location.href} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-emerald-50"><span className="font-bold">{location.name}</span><span className="text-xs font-semibold text-slate-500">{location.detail} →</span></Link>)}</div>
+          <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4"><p className="text-xs font-black text-emerald-800">PROTOTYPE DATASET</p><p className="mt-1 text-xs leading-5 text-emerald-700">Demo reports are community-style sample data for the hackathon prototype.</p></div>
+        </aside>
       </section>
 
-      {/* Recent community reports */}
-      <section className="mt-8">
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Community
-            </p>
-
-            <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">
-              Recent reports
-            </h2>
-          </div>
-
-          <Link
-            to="/map"
-            className="hidden items-center gap-1 text-sm font-bold text-slate-600 hover:text-slate-950 sm:flex"
-          >
-            View map
-            <ArrowRight size={16} />
-          </Link>
-        </div>
-
-        <div className="mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          {loading ? (
-            <div className="p-6 text-sm text-slate-500">
-              Loading recent reports...
-            </div>
-          ) : recentReports.length === 0 ? (
-            <div className="p-8 text-center">
-              <MapPin
-                size={28}
-                className="mx-auto text-slate-300"
-              />
-
-              <p className="mt-3 font-semibold text-slate-700">
-                No confirmed reports yet
-              </p>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Be the first person to make accessibility visible.
-              </p>
-
-              <Link
-                to="/report"
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white"
-              >
-                <Plus size={16} />
-                Create report
-              </Link>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {recentReports.map((report) => (
-                <Link
-                  key={report.id}
-                  to={`/barrier/${report.id}`}
-                  className="group flex items-center justify-between gap-4 p-5 transition hover:bg-slate-50"
-                >
-                  <div className="flex min-w-0 items-center gap-4">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100">
-                      <MapPin size={19} />
-                    </div>
-
-                    <div className="min-w-0">
-                      <h3 className="truncate font-bold text-slate-950">
-                        {report.barrier_type}
-                      </h3>
-
-                      <p className="mt-1 truncate text-sm text-slate-500">
-                        {report.description ||
-                          'Accessibility report submitted by the community'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <ArrowRight
-                    size={18}
-                    className="shrink-0 text-slate-400 transition group-hover:translate-x-1 group-hover:text-slate-950"
-                  />
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+      <section className="mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><p className="text-xs font-black uppercase tracking-[.18em] text-slate-400">Community</p><h2 className="mt-1 text-xl font-black">Recent reports</h2></div><Link to="/map" className="text-sm font-bold text-slate-500 hover:text-slate-950">View map →</Link></div>
+        {loading ? <div className="p-6 text-sm text-slate-500">Loading recent reports…</div> : recentReports.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">No confirmed reports yet.</div> : <div className="divide-y divide-slate-100">{recentReports.map((report) => <Link key={report.id} to={`/barrier/${report.id}`} className="group flex items-center justify-between gap-4 px-5 py-4 hover:bg-slate-50"><div className="flex min-w-0 items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 group-hover:bg-emerald-50 group-hover:text-emerald-700"><MapPin size={17} /></span><div className="min-w-0"><p className="truncate font-bold">{report.barrier_type}</p><p className="truncate text-sm text-slate-500">{report.description || 'Community accessibility report'}</p></div></div><ArrowRight size={17} className="shrink-0 text-slate-300 group-hover:translate-x-1 group-hover:text-slate-950" /></Link>)}</div>}
       </section>
 
-      {/* Mission */}
-      <section className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-6 md:p-8">
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-          Why ACCESS exists
-        </p>
-
-        <p className="mt-3 max-w-3xl text-xl font-bold leading-8 tracking-tight text-slate-950 md:text-2xl">
-          Accessibility should be something people can discover
-          before they arrive — not something they have to discover
-          the hard way.
-        </p>
-      </section>
-
-      <p className="mt-6 text-center text-xs text-slate-400">
-        Signed in as {displayName}
-      </p>
+      <p className="mt-7 text-center text-xs text-slate-400">Signed in as {displayName} · ACCESS accessibility intelligence</p>
     </main>
   )
 }
