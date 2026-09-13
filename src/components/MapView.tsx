@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import { Link } from 'react-router-dom'
-import { Accessibility, LocateFixed, MapPin, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react'
+import { Accessibility, LocateFixed, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import AccessibleRoutePlanner from './AccessibleRoutePlanner'
 import 'leaflet/dist/leaflet.css'
@@ -13,129 +13,19 @@ type FocusLocation = { latitude: number; longitude: number }
 type MapViewProps = { focusLocation?: FocusLocation; focusReportId?: string }
 const defaultCenter: [number, number] = [15.4909, 73.8278]
 
-function iconStyle(type: string) {
-  if (type === 'Accessible Entrance') return { bg: '#16a34a', symbol: '✓' }
-  if (type === 'Accessibility Uncertain') return { bg: '#d97706', symbol: '?' }
-  if (type === 'Narrow Pathway') return { bg: '#ea580c', symbol: '↔' }
-  if (type === 'Steep Entrance') return { bg: '#ea580c', symbol: '↗' }
-  if (type === 'Inaccessible Entrance') return { bg: '#dc2626', symbol: '×' }
-  if (type === 'Missing Accessibility Facility') return { bg: '#dc2626', symbol: '+' }
-  return { bg: '#dc2626', symbol: '!' }
-}
-
-function createIcon(type: string) {
-  const { bg, symbol } = iconStyle(type)
-  return L.divIcon({ className: '', html: `<div style="width:38px;height:38px;border-radius:14px;background:${bg};color:white;display:flex;align-items:center;justify-content:center;font-weight:900;border:3px solid white;box-shadow:0 7px 20px rgba(15,23,42,.24);font-size:16px;transform:rotate(-45deg)"><span style="transform:rotate(45deg)">${symbol}</span></div>`, iconSize: [38, 38], iconAnchor: [19, 19] })
-}
-
-function createFocusIcon() {
-  return L.divIcon({ className: '', html: `<div style="width:48px;height:48px;border-radius:16px;background:#0f172a;border:4px solid white;box-shadow:0 8px 24px rgba(15,23,42,.3);display:flex;align-items:center;justify-content:center;color:white;font-size:19px;font-weight:900;animation:access-pulse-ring 2.2s ease-out infinite">!</div>`, iconSize: [48, 48], iconAnchor: [24, 24] })
-}
-
-function createUserIcon() {
-  return L.divIcon({ className: '', html: `<div style="width:22px;height:22px;border-radius:50%;background:#2563eb;border:4px solid white;box-shadow:0 3px 14px rgba(37,99,235,.42);animation:access-pulse-ring 2.2s ease-out infinite"></div>`, iconSize: [22, 22], iconAnchor: [11, 11] })
-}
-
-function MapEvents({ onBoundsChange }: { onBoundsChange: (bounds: Bounds) => void }) {
-  const map = useMapEvents({ moveend() { const bounds = map.getBounds(); onBoundsChange({ minLat: bounds.getSouth(), maxLat: bounds.getNorth(), minLng: bounds.getWest(), maxLng: bounds.getEast() }) } })
-  useEffect(() => { const bounds = map.getBounds(); onBoundsChange({ minLat: bounds.getSouth(), maxLat: bounds.getNorth(), minLng: bounds.getWest(), maxLng: bounds.getEast() }) }, [map, onBoundsChange])
-  return null
-}
-
-function MapController({ focusLocation, userLocation }: { focusLocation?: FocusLocation; userLocation: [number, number] | null }) {
-  const map = useMap()
-  useEffect(() => { if (focusLocation) map.setView([focusLocation.latitude, focusLocation.longitude], 16, { animate: false }) }, [focusLocation, map])
-  useEffect(() => { if (userLocation) map.flyTo(userLocation, 16, { duration: 1 }) }, [map, userLocation])
-  return null
-}
-
+function iconStyle(type: string) { if (type === 'Accessible Entrance') return { bg: '#16a34a', symbol: '✓' }; if (type === 'Accessibility Uncertain') return { bg: '#d97706', symbol: '?' }; if (type === 'Narrow Pathway') return { bg: '#ea580c', symbol: '↔' }; if (type === 'Steep Entrance') return { bg: '#ea580c', symbol: '↗' }; if (type === 'Inaccessible Entrance') return { bg: '#dc2626', symbol: '×' }; if (type === 'Missing Accessibility Facility') return { bg: '#dc2626', symbol: '+' }; return { bg: '#dc2626', symbol: '!' } }
+function createIcon(type: string) { const { bg, symbol } = iconStyle(type); return L.divIcon({ className: '', html: `<div style="width:38px;height:38px;border-radius:14px;background:${bg};color:white;display:flex;align-items:center;justify-content:center;font-weight:900;border:3px solid white;box-shadow:0 7px 20px rgba(15,23,42,.24);font-size:16px;transform:rotate(-45deg)"><span style="transform:rotate(45deg)">${symbol}</span></div>`, iconSize: [38, 38], iconAnchor: [19, 19] }) }
+function createFocusIcon() { return L.divIcon({ className: '', html: `<div style="width:48px;height:48px;border-radius:16px;background:#0f172a;border:4px solid white;box-shadow:0 8px 24px rgba(15,23,42,.3);display:flex;align-items:center;justify-content:center;color:white;font-size:19px;font-weight:900;animation:access-pulse-ring 2.2s ease-out infinite">!</div>`, iconSize: [48, 48], iconAnchor: [24, 24] }) }
+function createUserIcon() { return L.divIcon({ className: '', html: `<div style="width:22px;height:22px;border-radius:50%;background:#2563eb;border:4px solid white;box-shadow:0 3px 14px rgba(37,99,235,.42);animation:access-pulse-ring 2.2s ease-out infinite"></div>`, iconSize: [22, 22], iconAnchor: [11, 11] }) }
+function MapEvents({ onBoundsChange }: { onBoundsChange: (bounds: Bounds) => void }) { const map = useMapEvents({ moveend() { const bounds = map.getBounds(); onBoundsChange({ minLat: bounds.getSouth(), maxLat: bounds.getNorth(), minLng: bounds.getWest(), maxLng: bounds.getEast() }) } }); useEffect(() => { const bounds = map.getBounds(); onBoundsChange({ minLat: bounds.getSouth(), maxLat: bounds.getNorth(), minLng: bounds.getWest(), maxLng: bounds.getEast() }) }, [map, onBoundsChange]); return null }
+function MapController({ focusLocation, userLocation }: { focusLocation?: FocusLocation; userLocation: [number, number] | null }) { const map = useMap(); useEffect(() => { if (focusLocation) map.setView([focusLocation.latitude, focusLocation.longitude], 16, { animate: false }) }, [focusLocation, map]); useEffect(() => { if (userLocation) map.flyTo(userLocation, 16, { duration: 1 }) }, [map, userLocation]); return null }
 export default function MapView({ focusLocation, focusReportId }: MapViewProps) {
-  const [reports, setReports] = useState<Report[]>([])
-  const [loading, setLoading] = useState(true)
-  const [locating, setLocating] = useState(false)
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
-  const center: [number, number] = focusLocation ? [focusLocation.latitude, focusLocation.longitude] : defaultCenter
-  const initialZoom = focusLocation ? 16 : 13
-
-  const loadReports = useCallback(async (bounds: Bounds) => {
-    setLoading(true)
-    const { data, error } = await supabase.rpc('get_map_reports', { p_min_lat: bounds.minLat, p_max_lat: bounds.maxLat, p_min_lng: bounds.minLng, p_max_lng: bounds.maxLng, p_limit: 500 })
-    if (error) { console.error('Failed to load map reports:', error); setReports([]) } else setReports(data ?? [])
-    setLoading(false)
-  }, [])
-
-  function locateUser() {
-    if (!navigator.geolocation) return
-    setLocating(true)
-    navigator.geolocation.getCurrentPosition(
-      (position) => { setUserLocation([position.coords.latitude, position.coords.longitude]); setLocating(false) },
-      (error) => { console.error('Location error:', error.message); setLocating(false) },
-      { enableHighAccuracy: false, timeout: 10000 },
-    )
-  }
-
-  const visibleReports = reports.filter((report) => report.id !== focusReportId)
-  const barrierCount = visibleReports.filter((r) => r.barrier_type !== 'Accessible Entrance').length
-  const accessibleCount = visibleReports.filter((r) => r.barrier_type === 'Accessible Entrance').length
-
-  return (
-    <div className="relative h-full min-h-[350px] w-full overflow-hidden bg-slate-100">
-      <MapContainer center={center} zoom={initialZoom} scrollWheelZoom className="h-full w-full">
-        <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <MapEvents onBoundsChange={loadReports} />
-        <MapController focusLocation={focusLocation} userLocation={userLocation} />
-        {visibleReports.map((report) => (
-          <Marker key={report.id} position={[report.latitude, report.longitude]} icon={createIcon(report.barrier_type)}>
-            <Popup>
-              <div className="min-w-[210px] p-0.5">
-                <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-red-500" /><p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">ACCESS report</p></div>
-                <h3 className="mt-2 font-black text-slate-950">{report.barrier_type}</h3>
-                {report.description && <p className="mt-2 text-sm leading-5 text-slate-600">{report.description}</p>}
-                <Link to={`/barrier/${report.id}`} className="mt-3 inline-flex items-center gap-1 text-sm font-black text-slate-950">View report <span>→</span></Link>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-        {focusLocation && <Marker position={[focusLocation.latitude, focusLocation.longitude]} icon={createFocusIcon()}><Popup><div className="min-w-[180px]"><p className="text-xs font-semibold uppercase text-slate-500">Report location</p><p className="mt-1 font-bold">Accessibility report location</p></div></Popup></Marker>}
-        {userLocation && <Marker position={userLocation} icon={createUserIcon()}><Popup><p className="font-semibold">Your current location</p></Popup></Marker>}
-        {!focusLocation && <AccessibleRoutePlanner userLocation={userLocation} />}
-      </MapContainer>
-
-      {!focusLocation && (
-        <>
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-[900] h-24 bg-gradient-to-b from-slate-950/20 to-transparent" />
-          <div className="access-enter absolute left-4 top-4 z-[1000] w-[min(430px,calc(100vw-32px))]">
-            <div className="access-glass overflow-hidden rounded-[1.5rem] border border-white/70 shadow-2xl shadow-slate-900/15">
-              <div className="flex items-center justify-between gap-3 px-4 py-3.5">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-white shadow-lg"><Accessibility size={19} /></div>
-                  <div className="min-w-0"><p className="text-sm font-black text-slate-950">Accessibility map</p><p className="truncate text-[11px] font-medium text-slate-500">Live community accessibility layer</p></div>
-                </div>
-                <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1.5 text-[10px] font-black text-emerald-700"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> LIVE</div>
-              </div>
-              <div className="grid grid-cols-2 border-t border-slate-200/70 bg-white/55">
-                <div className="px-4 py-2.5"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Barriers</p><p className="mt-0.5 text-lg font-black text-slate-950">{loading ? '—' : barrierCount}</p></div>
-                <div className="border-l border-slate-200/70 px-4 py-2.5"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Accessible</p><p className="mt-0.5 text-lg font-black text-emerald-600">{loading ? '—' : accessibleCount}</p></div>
-              </div>
-            </div>
-          </div>
-
-          <div className="access-stagger absolute bottom-5 left-4 z-[1000] hidden sm:block">
-            <div className="access-glass rounded-2xl border border-white/80 p-3 shadow-xl">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-500"><ShieldCheck size={14} className="text-emerald-600" /> Community signals</div>
-              <div className="mt-2 flex items-center gap-2.5 text-[11px] font-semibold text-slate-600"><span className="flex h-6 w-6 items-center justify-center rounded-lg bg-red-500 text-white">!</span> Barrier <span className="ml-1 flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500 text-white">✓</span> Accessible</div>
-            </div>
-          </div>
-
-          <div className="absolute bottom-5 right-4 z-[1000] flex flex-col gap-2">
-            <button type="button" onClick={locateUser} disabled={locating} className="access-glass flex h-12 w-12 items-center justify-center rounded-2xl border border-white shadow-xl hover:-translate-y-0.5 hover:bg-white disabled:opacity-60" aria-label="Find my location" title="Find my location"><LocateFixed size={19} className={locating ? 'animate-pulse text-blue-600' : ''} /></button>
-            <button type="button" onClick={() => window.location.reload()} className="access-glass flex h-12 w-12 items-center justify-center rounded-2xl border border-white shadow-xl hover:-translate-y-0.5 hover:bg-white" aria-label="Refresh map" title="Refresh map"><RefreshCw size={18} /></button>
-          </div>
-
-          <div className="pointer-events-none absolute bottom-5 right-20 z-[900] hidden lg:block"><div className="flex items-center gap-2 rounded-full border border-white/80 bg-white/80 px-3 py-2 text-[10px] font-bold text-slate-500 shadow-lg backdrop-blur"><Sparkles size={13} className="text-emerald-600" /> AI-assisted accessibility intelligence</div></div>
-        </>
-      )}
-      {focusLocation && loading && <div className="access-enter absolute left-4 top-4 z-[1000] rounded-xl border border-white/70 bg-white/90 px-4 py-2 text-xs font-semibold shadow-lg backdrop-blur">Loading nearby reports...</div>}
-    </div>
-  )
+  const [reports, setReports] = useState<Report[]>([]); const [loading, setLoading] = useState(true); const [locating, setLocating] = useState(false); const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
+  const center: [number, number] = focusLocation ? [focusLocation.latitude, focusLocation.longitude] : defaultCenter; const initialZoom = focusLocation ? 16 : 13
+  const loadReports = useCallback(async (bounds: Bounds) => { setLoading(true); const { data, error } = await supabase.rpc('get_map_reports', { p_min_lat: bounds.minLat, p_max_lat: bounds.maxLat, p_min_lng: bounds.minLng, p_max_lng: bounds.maxLng, p_limit: 500 }); if (error) { console.error('Failed to load map reports:', error); setReports([]) } else setReports(data ?? []); setLoading(false) }, [])
+  function locateUser() { if (!navigator.geolocation) return; setLocating(true); navigator.geolocation.getCurrentPosition((position) => { setUserLocation([position.coords.latitude, position.coords.longitude]); setLocating(false) }, (error) => { console.error('Location error:', error.message); setLocating(false) }, { enableHighAccuracy: false, timeout: 10000 }) }
+  const visibleReports = reports.filter((report) => report.id !== focusReportId); const barrierCount = visibleReports.filter((r) => r.barrier_type !== 'Accessible Entrance').length; const accessibleCount = visibleReports.filter((r) => r.barrier_type === 'Accessible Entrance').length
+  return <div className="relative h-full min-h-[350px] w-full overflow-hidden bg-slate-100"><MapContainer center={center} zoom={initialZoom} scrollWheelZoom className="h-full w-full"><TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" /><MapEvents onBoundsChange={loadReports} /><MapController focusLocation={focusLocation} userLocation={userLocation} />{visibleReports.map((report) => <Marker key={report.id} position={[report.latitude, report.longitude]} icon={createIcon(report.barrier_type)}><Popup><div className="min-w-[210px] p-0.5"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-red-500" /><p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">ACCESS report</p></div><h3 className="mt-2 font-black text-slate-950">{report.barrier_type}</h3>{report.description && <p className="mt-2 text-sm leading-5 text-slate-600">{report.description}</p>}<Link to={`/barrier/${report.id}`} className="mt-3 inline-flex items-center gap-1 text-sm font-black text-slate-950">View report <span>→</span></Link></div></Popup></Marker>)}{focusLocation && <Marker position={[focusLocation.latitude, focusLocation.longitude]} icon={createFocusIcon()}><Popup><div className="min-w-[180px]"><p className="text-xs font-semibold uppercase text-slate-500">Report location</p><p className="mt-1 font-bold">Accessibility report location</p></div></Popup></Marker>}{userLocation && <Marker position={userLocation} icon={createUserIcon()}><Popup><p className="font-semibold">Your current location</p></Popup></Marker>}{!focusLocation && <AccessibleRoutePlanner userLocation={userLocation} />}</MapContainer>
+  {!focusLocation && <><div className="pointer-events-none absolute inset-x-0 top-0 z-[900] h-24 bg-gradient-to-b from-slate-950/20 to-transparent" /><div className="access-enter absolute left-4 top-4 z-[1000] w-[min(430px,calc(100vw-32px))]"><div className="access-glass overflow-hidden rounded-[1.5rem] border border-white/70 shadow-2xl shadow-slate-900/15"><div className="flex items-center justify-between gap-3 px-4 py-3.5"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-white shadow-lg"><Accessibility size={19} /></div><div className="min-w-0"><p className="text-sm font-black text-slate-950">Accessibility map</p><p className="truncate text-[11px] font-medium text-slate-500">Live community accessibility layer</p></div></div><div className="flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1.5 text-[10px] font-black text-emerald-700"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> LIVE</div></div><div className="grid grid-cols-2 border-t border-slate-200/70 bg-white/55"><div className="px-4 py-2.5"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Barriers</p><p className="mt-0.5 text-lg font-black text-slate-950">{loading ? '—' : barrierCount}</p></div><div className="border-l border-slate-200/70 px-4 py-2.5"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Accessible</p><p className="mt-0.5 text-lg font-black text-emerald-600">{loading ? '—' : accessibleCount}</p></div></div></div></div><div className="access-stagger absolute bottom-5 left-4 z-[1000] hidden sm:block"><div className="access-glass rounded-2xl border border-white/80 p-3 shadow-xl"><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-500"><ShieldCheck size={14} className="text-emerald-600" /> Community signals</div><div className="mt-2 flex items-center gap-2.5 text-[11px] font-semibold text-slate-600"><span className="flex h-6 w-6 items-center justify-center rounded-lg bg-red-500 text-white">!</span> Barrier <span className="ml-1 flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500 text-white">✓</span> Accessible</div></div></div><div className="absolute bottom-5 right-4 z-[1000] flex flex-col gap-2"><button type="button" onClick={locateUser} disabled={locating} className="access-glass flex h-12 w-12 items-center justify-center rounded-2xl border border-white shadow-xl hover:-translate-y-0.5 hover:bg-white disabled:opacity-60" aria-label="Find my location" title="Find my location"><LocateFixed size={19} className={locating ? 'animate-pulse text-blue-600' : ''} /></button><button type="button" onClick={() => window.location.reload()} className="access-glass flex h-12 w-12 items-center justify-center rounded-2xl border border-white shadow-xl hover:-translate-y-0.5 hover:bg-white" aria-label="Refresh map" title="Refresh map"><RefreshCw size={18} /></button></div><div className="pointer-events-none absolute bottom-5 right-20 z-[900] hidden lg:block"><div className="flex items-center gap-2 rounded-full border border-white/80 bg-white/80 px-3 py-2 text-[10px] font-bold text-slate-500 shadow-lg backdrop-blur"><Sparkles size={13} className="text-emerald-600" /> AI-assisted accessibility intelligence</div></div></>}
+  {focusLocation && loading && <div className="access-enter absolute left-4 top-4 z-[1000] rounded-xl border border-white/70 bg-white/90 px-4 py-2 text-xs font-semibold shadow-lg backdrop-blur">Loading nearby reports...</div>}</div>
 }
