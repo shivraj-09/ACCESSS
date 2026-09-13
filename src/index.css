@@ -8,49 +8,39 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
-
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 html, body, #root { margin: 0; min-height: 100%; }
 body {
   min-width: 320px;
-  background:
-    radial-gradient(circle at 15% 0%, rgba(34,197,94,.07), transparent 28rem),
-    radial-gradient(circle at 90% 10%, rgba(14,165,233,.05), transparent 24rem),
-    #f8fafc;
+  background: radial-gradient(circle at 15% 0%, rgba(34,197,94,.07), transparent 28rem), radial-gradient(circle at 90% 10%, rgba(14,165,233,.05), transparent 24rem), #f8fafc;
 }
 button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
-button, a {
-  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
-  transition-duration: 180ms;
-  transition-timing-function: ease-out;
-}
-button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
-  outline: 3px solid rgba(34,197,94,.45);
-  outline-offset: 3px;
-}
-.leaflet-container { width: 100%; height: 100%; font-family: inherit; }
+button, a { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-duration: 180ms; transition-timing-function: ease-out; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid rgba(34,197,94,.45); outline-offset: 3px; }
+.leaflet-container { width:100%; height:100%; font-family:inherit; }
 
 @keyframes access-fade-up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
 @keyframes access-float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
 @keyframes access-pulse-ring { 0% { box-shadow:0 0 0 0 rgba(34,197,94,.30); } 70% { box-shadow:0 0 0 14px rgba(34,197,94,0); } 100% { box-shadow:0 0 0 0 rgba(34,197,94,0); } }
 @keyframes access-shimmer { 0% { background-position:-500px 0; } 100% { background-position:500px 0; } }
-.access-enter { animation: access-fade-up 520ms cubic-bezier(.22,1,.36,1) both; }
-.access-float { animation: access-float 5s ease-in-out infinite; }
-.access-pulse { animation: access-pulse-ring 2.2s ease-out infinite; }
-.access-stagger > * { animation: access-fade-up 500ms cubic-bezier(.22,1,.36,1) both; }
-.access-stagger > *:nth-child(1) { animation-delay:60ms; }
-.access-stagger > *:nth-child(2) { animation-delay:120ms; }
-.access-stagger > *:nth-child(3) { animation-delay:180ms; }
-.access-stagger > *:nth-child(4) { animation-delay:240ms; }
-.access-stagger > *:nth-child(5) { animation-delay:300ms; }
-.access-stagger > *:nth-child(6) { animation-delay:360ms; }
+@keyframes access-glow { 0%,100% { box-shadow:0 10px 35px rgba(15,23,42,.08); } 50% { box-shadow:0 16px 45px rgba(15,23,42,.13); } }
+.access-enter { animation:access-fade-up 520ms cubic-bezier(.22,1,.36,1) both; }
+.access-float { animation:access-float 5s ease-in-out infinite; }
+.access-pulse { animation:access-pulse-ring 2.2s ease-out infinite; }
+.access-stagger > * { animation:access-fade-up 500ms cubic-bezier(.22,1,.36,1) both; }
+.access-stagger > *:nth-child(1){animation-delay:60ms}.access-stagger > *:nth-child(2){animation-delay:120ms}.access-stagger > *:nth-child(3){animation-delay:180ms}.access-stagger > *:nth-child(4){animation-delay:240ms}.access-stagger > *:nth-child(5){animation-delay:300ms}.access-stagger > *:nth-child(6){animation-delay:360ms}
 .access-glass { background:rgba(255,255,255,.78); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
-.access-grid {
-  background-image: linear-gradient(rgba(15,23,42,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,.035) 1px, transparent 1px);
-  background-size:32px 32px;
-}
+.access-grid { background-image:linear-gradient(rgba(15,23,42,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(15,23,42,.035) 1px,transparent 1px); background-size:32px 32px; }
 .access-shimmer { background:linear-gradient(90deg,transparent,rgba(255,255,255,.14),transparent); background-size:500px 100%; animation:access-shimmer 2.4s infinite; }
+
+/* Refined defaults for the existing component library. */
+main > section { animation:access-fade-up 520ms cubic-bezier(.22,1,.36,1) both; }
+main > section:nth-child(2){animation-delay:70ms} main > section:nth-child(3){animation-delay:130ms} main > section:nth-child(4){animation-delay:190ms} main > section:nth-child(5){animation-delay:250ms}
+main .shadow-sm { transition:transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease; }
+main a.group:hover .shadow-sm, main .shadow-sm:hover { transform:translateY(-2px); box-shadow:0 16px 35px rgba(15,23,42,.09); }
+main button:not(:disabled):hover { transform:translateY(-1px); }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior:auto; }
   *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
