@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthContext'
 import BottomNav from './BottomNav'
 import { Bot, LogOut, Map, MapPinPlus, Sparkles } from 'lucide-react'
 
@@ -12,58 +13,25 @@ const navigation = [
 
 export default function AppLayout() {
   const location = useLocation()
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="access-glass sticky top-0 z-[1100] hidden border-b border-slate-200/70 md:block">
-        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-6">
-          <Link to="/dashboard" className="group flex items-center gap-3">
-            <span className="access-pulse flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg">
-              <span className="text-lg font-black">A</span>
-            </span>
-            <span>
-              <span className="block text-lg font-black tracking-tight">ACCESS</span>
-              <span className="block text-[10px] font-bold uppercase tracking-[.18em] text-slate-400">Accessibility intelligence</span>
-            </span>
-          </Link>
-
-          <nav aria-label="Main navigation" className="flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-white/70 p-1 shadow-sm">
-            {navigation.map((item) => {
-              const active = location.pathname === item.path
-              const Icon = item.icon
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold ${active ? 'bg-slate-950 text-white shadow-md' : 'text-slate-500 hover:bg-white hover:text-slate-950'}`}
-                >
-                  <Icon size={16} />
-                  {item.label}
-                </Link>
-              )
-            })}
-          </nav>
-
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-white hover:text-slate-950"
-          >
-            <LogOut size={16} />
-            Sign out
-          </button>
+  const { demoUser, exitDemo } = useAuth()
+  async function handleSignOut() { if (demoUser) exitDemo(); else await supabase.auth.signOut() }
+  return <div className="min-h-screen bg-[#f4f1ea] text-[#18211d]">
+    <header className="sticky top-0 z-[1100] hidden border-b border-[#dcd7ca] bg-[#f4f1ea]/95 backdrop-blur md:block">
+      <div className="mx-auto flex h-[78px] max-w-7xl items-center justify-between px-6">
+        <Link to="/dashboard" className="group flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#254b3f] text-[#f4f1ea] shadow-sm"><span className="text-lg font-black">A</span></span>
+          <span><span className="block text-xl font-black tracking-[-.04em] text-[#254b3f]">ACCESS</span><span className="block text-[9px] font-bold uppercase tracking-[.2em] text-[#7b8179]">Accessibility, made visible</span></span>
+        </Link>
+        <nav aria-label="Main navigation" className="flex items-center gap-1">
+          {navigation.map((item) => { const active = location.pathname === item.path; const Icon = item.icon; return <Link key={item.path} to={item.path} className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold ${active ? 'border-[#c76b43] text-[#18211d]' : 'border-transparent text-[#727870] hover:text-[#18211d]'}`}><Icon size={16} />{item.label}</Link> })}
+        </nav>
+        <div className="flex items-center gap-3">
+          {demoUser && <span className="hidden rounded-full border border-[#d6c5ad] bg-[#efe6d7] px-3 py-1.5 text-[11px] font-bold text-[#72553d] lg:block">Judge access · {demoUser.name}</span>}
+          <button type="button" onClick={handleSignOut} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-[#727870] hover:bg-white hover:text-[#18211d]"><LogOut size={16} /> Exit</button>
         </div>
-      </header>
-
-      <main className="pb-20 md:pb-0">
-        <Outlet />
-      </main>
-
-      <BottomNav />
-    </div>
-  )
+      </div>
+    </header>
+    <main className="pb-20 md:pb-0"><Outlet /></main>
+    <BottomNav />
+  </div>
 }
