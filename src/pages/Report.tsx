@@ -1,507 +1,128 @@
 import { useRef, useState } from 'react'
-import { Camera, MapPin, Upload, Sparkles, CheckCircle2, X } from 'lucide-react'
+import { Camera, MapPin, Upload, Sparkles, CheckCircle2, X, ShieldCheck, ArrowRight, ImagePlus } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
-type AIResult = {
-  barrier_detected: boolean
-  barrier_type: string
-  severity: 'low' | 'medium' | 'high'
-  confidence: number
-  explanation: string
-}
+type AIResult = { barrier_detected: boolean; barrier_type: string; severity: 'low' | 'medium' | 'high'; confidence: number; explanation: string }
+type DraftReport = { id: string; ai_result: AIResult; barrier_type: string }
 
-type DraftReport = {
-  id: string
-  ai_result: AIResult
-  barrier_type: string
-}
-
-const barrierTypes = [
-  'Blocked Ramp',
-  'Narrow Pathway',
-  'Steep Entrance',
-  'Inaccessible Entrance',
-  'Missing Accessibility Facility',
-  'Accessible Entrance',
-  'Accessibility Uncertain',
-]
+const barrierTypes = ['Blocked Ramp', 'Narrow Pathway', 'Steep Entrance', 'Inaccessible Entrance', 'Missing Accessibility Facility', 'Accessible Entrance', 'Accessibility Uncertain']
 
 export default function Report() {
   const { session } = useAuth()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
-
   const [photo, setPhoto] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
-
   const [latitude, setLatitude] = useState('')
   const [longitude, setLongitude] = useState('')
-
   const [barrierType, setBarrierType] = useState('')
   const [description, setDescription] = useState('')
-
   const [loadingLocation, setLoadingLocation] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
-
   const [draft, setDraft] = useState<DraftReport | null>(null)
   const [saving, setSaving] = useState(false)
-
   const [error, setError] = useState<string | null>(null)
 
   function handlePhoto(file: File | undefined) {
     if (!file) return
-
-    if (!file.type.startsWith('image/')) {
-      setError('Please select an image file.')
-      return
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Photo must be 10 MB or smaller.')
-      return
-    }
-
-    setError(null)
-    setPhoto(file)
-    setPreview(URL.createObjectURL(file))
-    setDraft(null)
+    if (!file.type.startsWith('image/')) { setError('Please select an image file.'); return }
+    if (file.size > 10 * 1024 * 1024) { setError('Photo must be 10 MB or smaller.'); return }
+    setError(null); setPhoto(file); setPreview(URL.createObjectURL(file)); setDraft(null)
   }
 
   function getLocation() {
-    setError(null)
-    setLoadingLocation(true)
-
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by this browser.')
-      setLoadingLocation(false)
-      return
-    }
-
+    setError(null); setLoadingLocation(true)
+    if (!navigator.geolocation) { setError('Geolocation is not supported by this browser.'); setLoadingLocation(false); return }
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLatitude(position.coords.latitude.toString())
-        setLongitude(position.coords.longitude.toString())
-        setLoadingLocation(false)
-      },
-      () => {
-        setError(
-          'Unable to get your location. Please allow location access and try again.',
-        )
-        setLoadingLocation(false)
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-      },
+      (position) => { setLatitude(position.coords.latitude.toString()); setLongitude(position.coords.longitude.toString()); setLoadingLocation(false) },
+      () => { setError('Unable to get your location. Please allow location access and try again.'); setLoadingLocation(false) },
+      { enableHighAccuracy: true, timeout: 10000 },
     )
   }
 
   async function analyzeReport() {
     setError(null)
-
-    if (!session?.access_token) {
-      setError('You must be signed in.')
-      return
-    }
-
-    if (!photo) {
-      setError('Please upload a photo first.')
-      return
-    }
-
-    if (!latitude || !longitude) {
-      setError('Please add your location first.')
-      return
-    }
-
+    if (!session?.access_token) { setError('You must be signed in.'); return }
+    if (!photo) { setError('Please upload a photo first.'); return }
+    if (!latitude || !longitude) { setError('Please add your location first.'); return }
     setAnalyzing(true)
-
     try {
       const form = new FormData()
-
-      form.append('photo', photo)
-      form.append('latitude', latitude)
-      form.append('longitude', longitude)
-      form.append('description', description)
-      form.append('barrier_type', barrierType)
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit-report-v5`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: form,
-        },
-      )
-
+      form.append('photo', photo); form.append('latitude', latitude); form.append('longitude', longitude); form.append('description', description); form.append('barrier_type', barrierType)
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit-report-v5`, { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}` }, body: form })
       const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to analyze report.')
-      }
-
-      setDraft({
-        id: data.report.id,
-        ai_result: data.report.ai_result,
-        barrier_type: data.report.barrier_type,
-      })
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Something went wrong while analyzing the photo.',
-      )
-    } finally {
-      setAnalyzing(false)
-    }
+      if (!response.ok) throw new Error(data.error || 'Failed to analyze report.')
+      setDraft({ id: data.report.id, ai_result: data.report.ai_result, barrier_type: data.report.barrier_type })
+    } catch (err) { setError(err instanceof Error ? err.message : 'Something went wrong while analyzing the photo.') }
+    finally { setAnalyzing(false) }
   }
 
   async function confirmReport(action: 'confirm' | 'reject') {
     if (!session?.access_token || !draft) return
-
-    setSaving(true)
-    setError(null)
-
+    setSaving(true); setError(null)
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confirm-report`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            report_id: draft.id,
-            action,
-          }),
-        },
-      )
-
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confirm-report`, { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ report_id: draft.id, action }) })
       const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Could not update report.')
-      }
-
-      if (action === 'confirm') {
-        navigate(`/barrier/${draft.id}`)
-      } else {
-        setDraft(null)
-        setPhoto(null)
-        setPreview(null)
-        setBarrierType('')
-        setDescription('')
-        setLatitude('')
-        setLongitude('')
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Something went wrong.',
-      )
-    } finally {
-      setSaving(false)
-    }
+      if (!response.ok) throw new Error(data.error || 'Could not update report.')
+      if (action === 'confirm') navigate(`/barrier/${draft.id}`)
+      else { setDraft(null); setPhoto(null); setPreview(null); setBarrierType(''); setDescription(''); setLatitude(''); setLongitude('') }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Something went wrong.') }
+    finally { setSaving(false) }
   }
 
+  const canPublish = !!draft?.ai_result && draft.ai_result.barrier_detected === true && draft.ai_result.barrier_type !== 'Accessibility Uncertain' && draft.ai_result.confidence >= 0.5
+
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8 pb-28 md:px-6 md:pb-10">
-      <div className="mb-8">
-        <p className="text-sm font-semibold text-slate-500">
-          REPORT A BARRIER
-        </p>
-
-        <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
-          Help make places more accessible.
-        </h1>
-
-        <p className="mt-2 max-w-2xl text-slate-600">
-          Upload a photo, tell us where it is, and ACCESS will
-          provide an AI-assisted assessment for you to review.
-        </p>
-      </div>
-
-      {error && (
-        <div
-          role="alert"
-          className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-        >
-          {error}
+    <main className="mx-auto max-w-5xl px-4 py-6 pb-28 md:px-6 md:py-9 md:pb-10 access-enter">
+      <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 px-6 py-7 text-white shadow-2xl md:px-9 md:py-9 access-grid">
+        <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full border-[42px] border-emerald-400/10 access-float" />
+        <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black tracking-wide text-emerald-300"><Sparkles size={14} /> AI-ASSISTED REPORTING</div>
+            <h1 className="mt-4 text-3xl font-black tracking-tight md:text-5xl">Help make places more accessible.</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">Capture the evidence. ACCESS analyzes it. You stay in control of what gets published.</p>
+          </div>
+          <div className="hidden shrink-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-300 md:block"><ShieldCheck className="mb-1 text-emerald-300" size={18} /><span>AI is advisory.<br />You confirm the report.</span></div>
         </div>
-      )}
+      </section>
 
-      <div className="space-y-6">
-        {/* Photo */}
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-slate-100 p-2">
-              <Camera size={20} />
-            </div>
+      {error && <div role="alert" className="mt-5 access-enter rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</div>}
 
-            <div>
-              <h2 className="font-bold text-slate-950">
-                1. Add a photo
-              </h2>
-              <p className="text-sm text-slate-500">
-                Show the entrance, pathway, or accessibility barrier.
-              </p>
-            </div>
-          </div>
-
-          {preview ? (
-            <div className="relative mt-5 overflow-hidden rounded-2xl">
-              <img
-                src={preview}
-                alt="Selected accessibility report"
-                className="max-h-[420px] w-full object-cover"
-              />
-
-              <button
-                type="button"
-                onClick={() => {
-                  setPhoto(null)
-                  setPreview(null)
-                  setDraft(null)
-                }}
-                className="absolute right-3 top-3 rounded-full bg-white p-2 shadow-lg"
-                aria-label="Remove photo"
-              >
-                <X size={18} />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="mt-5 flex min-h-48 w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 transition hover:border-slate-500"
-            >
-              <Upload size={28} />
-
-              <span className="mt-3 font-semibold">
-                Upload a photo
-              </span>
-
-              <span className="mt-1 text-sm text-slate-500">
-                JPEG, PNG, or WebP · max 10 MB
-              </span>
-            </button>
-          )}
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={(event) => handlePhoto(event.target.files?.[0])}
-          />
-        </section>
-
-        {/* Location */}
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-slate-100 p-2">
-              <MapPin size={20} />
-            </div>
-
-            <div>
-              <h2 className="font-bold text-slate-950">
-                2. Add the location
-              </h2>
-
-              <p className="text-sm text-slate-500">
-                We use coordinates to place the report on the map.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={getLocation}
-            disabled={loadingLocation}
-            className="mt-5 w-full rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white disabled:opacity-50"
-          >
-            {loadingLocation
-              ? 'Getting your location...'
-              : 'Use my current location'}
-          </button>
-
-          {latitude && longitude && (
-            <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
-              Location captured: {Number(latitude).toFixed(5)},{' '}
-              {Number(longitude).toFixed(5)}
-            </div>
-          )}
-        </section>
-
-        {/* Details */}
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="font-bold text-slate-950">
-            3. Describe the issue
-          </h2>
-
-          <label className="mt-5 block text-sm font-semibold">
-            Barrier type
-          </label>
-
-          <select
-            value={barrierType}
-            onChange={(event) => {
-              setBarrierType(event.target.value)
-              setDraft(null)
-            }}
-            className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-950"
-          >
-            <option value="">
-              Let AI determine it
-            </option>
-
-            {barrierTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-
-          <label className="mt-5 block text-sm font-semibold">
-            Description
-          </label>
-
-          <textarea
-            value={description}
-            onChange={(event) => {
-              setDescription(event.target.value)
-              setDraft(null)
-            }}
-            placeholder="What makes this place difficult or easy to access?"
-            rows={4}
-            maxLength={2000}
-            className="mt-2 w-full resize-none rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-950"
-          />
-        </section>
-
-        {/* Analyze */}
-        {!draft && (
-          <button
-            type="button"
-            onClick={analyzeReport}
-            disabled={analyzing}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 font-bold text-white shadow-lg disabled:opacity-50"
-          >
-            <Sparkles size={20} />
-
-            {analyzing
-              ? 'ACCESS is analyzing the photo...'
-              : 'Analyze with ACCESS AI'}
-          </button>
-        )}
-
-        {/* AI result */}
-        {draft && (
-          <section className="rounded-3xl border border-slate-300 bg-slate-950 p-6 text-white shadow-xl">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-white/10 p-2">
-                <Sparkles size={20} />
-              </div>
-
-              <div>
-                <p className="text-sm font-semibold text-slate-400">
-                  AI-ASSISTED ASSESSMENT
-                </p>
-
-                <h2 className="text-xl font-black">
-                  Review this result
-                </h2>
-              </div>
-            </div>
-
-            <div className="mt-6 rounded-2xl bg-white/10 p-5">
-              <p className="text-sm text-slate-400">
-                Detected barrier
-              </p>
-
-              <p className="mt-1 text-2xl font-black">
-                {draft.ai_result.barrier_type}
-              </p>
-
-              <div className="mt-4 flex flex-wrap gap-3 text-sm">
-                <span className="rounded-full bg-white/10 px-3 py-1">
-                  Severity: {draft.ai_result.severity}
-                </span>
-
-                <span className="rounded-full bg-white/10 px-3 py-1">
-                  Confidence:{' '}
-                  {Math.round(draft.ai_result.confidence * 100)}%
-                </span>
-              </div>
-
-              <p className="mt-5 leading-6 text-slate-300">
-                {draft.ai_result.explanation}
-              </p>
-            </div>
-
-            <p className="mt-5 text-sm text-slate-400">
-              AI is advisory only. Please review the result before
-              publishing this report.
-            </p>
-
-            {draft.ai_result.barrier_detected ? (
-  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-    <button
-      type="button"
-      onClick={() => confirmReport('reject')}
-      disabled={saving}
-      className="rounded-2xl border border-white/20 px-5 py-3 font-semibold text-white disabled:opacity-50"
-    >
-      Reject
-    </button>
-
-    <button
-      type="button"
-      onClick={() => confirmReport('confirm')}
-      disabled={saving}
-      className="flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 font-bold text-slate-950 disabled:opacity-50"
-    >
-      <CheckCircle2 size={19} />
-
-      {saving ? 'Saving...' : 'Confirm & publish'}
-    </button>
-  </div>
-) : (
-  <div className="mt-5">
-    <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4">
-      <p className="font-semibold text-amber-200">
-        No accessibility barrier confidently identified
-      </p>
-
-      <p className="mt-1 text-sm leading-6 text-slate-300">
-        ACCESS could not find enough visible evidence of an
-        accessibility barrier in this image. Please upload a clearer
-        photo showing the entrance, pathway, or accessibility issue.
-      </p>
-    </div>
-
-    <button
-      type="button"
-      onClick={() => {
-        setPhoto(null)
-        setPreview(null)
-        setDraft(null)
-        setError(null)
-        fileInputRef.current?.click()
-      }}
-      className="mt-3 w-full rounded-2xl bg-white px-5 py-3 font-bold text-slate-950"
-    >
-      Choose another image
-    </button>
-  </div>
-)}
+      <div className="mt-6 grid gap-5 lg:grid-cols-[1.05fr_.95fr]">
+        <div className="space-y-5 access-stagger">
+          <section className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-lg md:p-6">
+            <div className="flex items-center justify-between"><div className="flex items-center gap-3"><span className="rounded-xl bg-emerald-50 p-2.5 text-emerald-700"><Camera size={19} /></span><div><p className="text-xs font-black uppercase tracking-widest text-slate-400">01 · Evidence</p><h2 className="font-black">Add a photo</h2></div></div><span className="text-xs font-semibold text-slate-400">Required</span></div>
+            {preview ? <div className="group relative mt-5 overflow-hidden rounded-2xl bg-slate-100"><img src={preview} alt="Selected accessibility report" className="max-h-[430px] w-full object-cover transition duration-500 group-hover:scale-[1.02]" /><div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/70 to-transparent p-4 pt-14"><span className="text-xs font-bold text-white">Evidence photo ready for AI analysis</span></div><button type="button" onClick={() => { setPhoto(null); setPreview(null); setDraft(null) }} className="absolute right-3 top-3 rounded-full bg-white/95 p-2 shadow-lg hover:scale-105" aria-label="Remove photo"><X size={18} /></button></div> : <button type="button" onClick={() => fileInputRef.current?.click()} className="mt-5 flex min-h-56 w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 transition hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-emerald-50/50"><span className="rounded-2xl bg-white p-4 shadow-sm"><ImagePlus size={28} className="text-slate-700" /></span><span className="mt-4 font-black">Upload a barrier photo</span><span className="mt-1 text-sm text-slate-500">JPEG, PNG or WebP · max 10 MB</span></button>}
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => handlePhoto(event.target.files?.[0])} />
           </section>
-        )}
+
+          <section className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-lg md:p-6">
+            <div className="flex items-center gap-3"><span className="rounded-xl bg-sky-50 p-2.5 text-sky-700"><MapPin size={19} /></span><div><p className="text-xs font-black uppercase tracking-widest text-slate-400">02 · Location</p><h2 className="font-black">Where is it?</h2></div></div>
+            <button type="button" onClick={getLocation} disabled={loadingLocation} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 font-black text-white shadow-lg hover:-translate-y-0.5 hover:bg-slate-800 disabled:opacity-50"><MapPin size={18} />{loadingLocation ? 'Getting your location…' : 'Use my current location'}<ArrowRight size={16} className="ml-auto opacity-50" /></button>
+            {latitude && longitude && <div className="mt-3 flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-800"><CheckCircle2 size={18} /><span><strong>Location captured</strong><br /><span className="text-xs">{Number(latitude).toFixed(5)}, {Number(longitude).toFixed(5)}</span></span></div>}
+          </section>
+        </div>
+
+        <div className="space-y-5 access-stagger">
+          <section className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-lg md:p-6">
+            <div className="flex items-center gap-3"><span className="rounded-xl bg-amber-50 p-2.5 text-amber-700"><Sparkles size={19} /></span><div><p className="text-xs font-black uppercase tracking-widest text-slate-400">03 · Context</p><h2 className="font-black">Describe the issue</h2></div></div>
+            <label className="mt-5 block text-sm font-bold text-slate-700">Barrier type <span className="font-normal text-slate-400">· optional</span></label>
+            <select value={barrierType} onChange={(event) => { setBarrierType(event.target.value); setDraft(null) }} className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3.5 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"><option value="">Let AI determine it</option>{barrierTypes.map((type) => <option key={type} value={type}>{type}</option>)}</select>
+            <label className="mt-5 block text-sm font-bold text-slate-700">What did you notice?</label>
+            <textarea value={description} onChange={(event) => { setDescription(event.target.value); setDraft(null) }} placeholder="Example: The ramp is blocked by parked scooters…" rows={5} maxLength={2000} className="mt-2 w-full resize-none rounded-2xl border border-slate-300 px-4 py-3.5 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10" />
+            <div className="mt-1 text-right text-xs text-slate-400">{description.length}/2000</div>
+          </section>
+
+          {!draft && <button type="button" onClick={analyzeReport} disabled={analyzing} className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-emerald-500 px-6 py-4 font-black text-slate-950 shadow-xl shadow-emerald-500/20 transition hover:-translate-y-1 hover:bg-emerald-400 disabled:cursor-wait disabled:opacity-60"><Sparkles size={20} className={analyzing ? 'animate-spin' : ''} />{analyzing ? 'ACCESS is analyzing the evidence…' : 'Analyze with ACCESS AI'}<ArrowRight size={18} className="transition group-hover:translate-x-1" /></button>}
+
+          {draft && <section className="access-enter overflow-hidden rounded-[1.75rem] bg-slate-950 p-5 text-white shadow-2xl md:p-6">
+            <div className="flex items-center justify-between"><div className="flex items-center gap-3"><span className="rounded-xl bg-emerald-400/15 p-2.5 text-emerald-300"><Sparkles size={19} /></span><div><p className="text-xs font-black uppercase tracking-widest text-emerald-300">AI assessment</p><h2 className="font-black">Review before publishing</h2></div></div><span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold">{Math.round(draft.ai_result.confidence * 100)}% confidence</span></div>
+            <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-5"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Detected</p><p className="mt-1 text-2xl font-black tracking-tight">{draft.ai_result.barrier_type}</p><div className="mt-4 flex flex-wrap gap-2"><span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold">Severity · {draft.ai_result.severity}</span><span className={`rounded-full px-3 py-1 text-xs font-bold ${draft.ai_result.barrier_detected ? 'bg-emerald-400/15 text-emerald-300' : 'bg-amber-400/15 text-amber-200'}`}>{draft.ai_result.barrier_detected ? 'Barrier detected' : 'Needs clearer evidence'}</span></div><p className="mt-5 text-sm leading-6 text-slate-300">{draft.ai_result.explanation}</p></div>
+            <p className="mt-4 flex gap-2 text-xs leading-5 text-slate-400"><ShieldCheck size={15} className="mt-0.5 shrink-0" />AI is advisory only. Your confirmation is required before a report becomes visible to the community.</p>
+            {canPublish ? <div className="mt-5 grid gap-3 sm:grid-cols-2"><button type="button" onClick={() => confirmReport('reject')} disabled={saving} className="rounded-2xl border border-white/15 px-5 py-3.5 font-bold text-white hover:bg-white/5 disabled:opacity-50">Reject</button><button type="button" onClick={() => confirmReport('confirm')} disabled={saving} className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-5 py-3.5 font-black text-slate-950 hover:bg-emerald-300 disabled:opacity-50"><CheckCircle2 size={19} />{saving ? 'Publishing…' : 'Confirm & publish'}</button></div> : <div className="mt-5"><div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4"><p className="font-bold text-amber-200">No barrier confidently identified</p><p className="mt-1 text-sm leading-6 text-slate-300">ACCESS could not find enough visible evidence. Upload a clearer photo showing the entrance, pathway, or accessibility issue.</p></div><button type="button" onClick={() => { setPhoto(null); setPreview(null); setDraft(null); setError(null); fileInputRef.current?.click() }} className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 font-black text-slate-950 hover:bg-slate-100"><ImagePlus size={18} />Choose another image</button></div>}
+          </section>}
+        </div>
       </div>
     </main>
   )
