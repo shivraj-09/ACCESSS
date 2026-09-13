@@ -2,19 +2,8 @@ import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 
 export default function ProtectedRoute() {
-  const { session, loading } = useAuth()
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
-        <p className="text-slate-400">Loading ACCESS...</p>
-      </main>
-    )
-  }
-
-  if (!session) {
-    return <Navigate to="/" replace />
-  }
-
+  const { session, demoUser, loading } = useAuth()
+  if (loading) return <main className="min-h-screen bg-[#f4f1ea] text-[#18211d] flex items-center justify-center"><p className="text-sm font-semibold text-slate-500">Opening ACCESS…</p></main>
+  if (!session && !demoUser) return <Navigate to="/" replace />
   return <Outlet />
 }
