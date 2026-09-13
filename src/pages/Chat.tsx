@@ -13,6 +13,15 @@ const suggestions = [
   'How can I find accessible places nearby?',
 ]
 
+function formatAssistantMessage(content: string) {
+  return content
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^\s*#{1,6}\s*/gm, '')
+    .replace(/^\s*[-*]\s+/gm, '• ')
+    .trim()
+}
+
 export default function Chat() {
   const { session } = useAuth()
 
@@ -141,7 +150,6 @@ export default function Chat() {
 
   return (
     <main className="mx-auto flex h-[calc(100vh-70px)] max-w-5xl flex-col px-4 py-5 pb-24 md:px-6 md:pb-6">
-      {/* Header */}
       <div className="shrink-0 pb-5">
         <div className="flex items-center gap-3">
           <div className="rounded-2xl bg-slate-950 p-3 text-white">
@@ -165,7 +173,6 @@ export default function Chat() {
         </p>
       </div>
 
-      {/* Chat area */}
       <div className="min-h-0 flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div
           className="h-full overflow-y-auto p-4 md:p-6"
@@ -193,7 +200,9 @@ export default function Chat() {
                     : 'bg-slate-100 text-slate-700'
                 }`}
               >
-                {message.content}
+                {message.role === 'assistant'
+                  ? formatAssistantMessage(message.content)
+                  : message.content}
               </div>
 
               {message.role === 'user' && (
@@ -216,7 +225,6 @@ export default function Chat() {
             </div>
           )}
 
-          {/* Suggestions */}
           {messages.length === 1 && !sending && (
             <div className="mt-8">
               <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -242,7 +250,6 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* Input */}
       <form
         onSubmit={handleSubmit}
         className="mt-4 flex shrink-0 gap-2"
